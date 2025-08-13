@@ -10,39 +10,38 @@ import java.time.LocalDateTime;
 
 @Entity
 public class Product {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) 
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-        private String name;
-        private double price;
-        private int stockQuantity;
-        private LocalDateTime createdAt;
-        private LocalDateTime updatedAt;
+    private String name;
+    private double price;
+    private int stockQuantity;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-        // Foreign key to Category
-        @ManyToOne
-        @JoinColumn(name = "category_id")
-        private Category category;
+    // Foreign key to Category
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
 
-        // Foreign key to Supplier
-        @ManyToOne
-        @JoinColumn(name = "supplier_id")
-        private Supplier supplier;
+    // Foreign key to Supplier
+    @ManyToOne
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier;
 
     // Constructors
     public Product() {}
 
-        public Product(String name, double price, int stockQuantity, LocalDateTime createdAt, LocalDateTime updatedAt, Category category, Supplier supplier) {
-            this.name = name;
-            this.price = price;
-            this.stockQuantity = stockQuantity;
-            this.createdAt = createdAt;
-            this.updatedAt = updatedAt;
-            this.category = category;
-            this.supplier = supplier;
-        }
+    public Product(String name, double price, int stockQuantity, LocalDateTime createdAt, LocalDateTime updatedAt, Category category, Supplier supplier) {
+        this.name = name;
+        this.price = price;
+        this.stockQuantity = stockQuantity;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.category = category;
+        this.supplier = supplier;
+    }
 
     // Getters and setters
     public Long getId() {
@@ -93,19 +92,19 @@ public class Product {
         this.updatedAt = updatedAt;
     }
 
-        public Category getCategory() {
-            return category;
-        }
+    public Category getCategory() {
+        return category;
+    }
 
-        public void setCategory(Category category) {
-            this.category = category;
-        }
+    public void setCategory(Category category) {
+        this.category = category;
+    }
 
-        public Supplier getSupplier() {
-            return supplier;
-        }
+    public Supplier getSupplier() {
+        return supplier;
+    }
 
-        public void setSupplier(Supplier supplier) {
-            this.supplier = supplier;
-        }
+    public void setSupplier(Supplier supplier) {
+        this.supplier = supplier;
+    }
 }
