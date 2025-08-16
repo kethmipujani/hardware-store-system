@@ -7,12 +7,16 @@ import java.util.List;
 
 @Entity
 @Table(name = "sales")
+
 public class Sale {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long saleId;
 
+
+    private String customerName;
+    private String customerContact;
     private LocalDateTime saleDate;
 
     private BigDecimal totalAmount;
@@ -27,11 +31,28 @@ public class Sale {
     public Sale() {}
 
     // Constructor with fields
-    public Sale(LocalDateTime saleDate, BigDecimal totalAmount, String paymentStatus, List<SaleItem> saleItems) {
+
+    public Sale(String customerName, String customerContact, LocalDateTime saleDate, BigDecimal totalAmount, String paymentStatus, List<SaleItem> saleItems) {
+        this.customerName = customerName;
+        this.customerContact = customerContact;
         this.saleDate = saleDate;
         this.totalAmount = totalAmount;
         this.paymentStatus = paymentStatus;
         this.saleItems = saleItems;
+    }
+    public String getCustomerContact() {
+        return customerContact;
+    }
+
+    public void setCustomerContact(String customerContact) {
+        this.customerContact = customerContact;
+    }
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 
     // Getters and setters
