@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { FiSearch, FiTrash2, FiPlus, FiMinus, FiChevronDown } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { FiSearch, FiTrash2, FiPlus, FiMinus, FiChevronDown, FiArrowLeft } from "react-icons/fi";
 
 function NewSale() {
+  const navigate = useNavigate();
   // Customer Information
   const [customer, setCustomer] = useState({ 
     name: "", 
@@ -128,6 +130,13 @@ function NewSale() {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <div className="max-w-6xl mx-auto">
+        <button
+          className="flex items-center text-[#00005A] hover:text-[#8B000B] mb-4"
+          onClick={() => navigate('/dashboard')}
+        >
+          <FiArrowLeft className="mr-2" size={20} />
+          Back to Dashboard
+        </button>
         <h2 className="text-2xl font-bold mb-6 text-[#00005A]">New Sale</h2>
         
         {/* Customer Information */}
@@ -135,25 +144,25 @@ function NewSale() {
           <h3 className="text-lg font-semibold mb-4 text-gray-700">Customer Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Customer Name*</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Customer Name</label>
               <input
                 type="text"
                 placeholder="Enter customer name"
                 className="border border-gray-300 p-2 rounded-lg w-full focus:ring-2 focus:ring-[#00005A] focus:border-transparent"
                 value={customer.name}
                 onChange={(e) => setCustomer({...customer, name: e.target.value})}
-                required
+                
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Contact Number*</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Contact Number</label>
               <input
                 type="text"
                 placeholder="Enter contact number"
                 className="border border-gray-300 p-2 rounded-lg w-full focus:ring-2 focus:ring-[#00005A] focus:border-transparent"
                 value={customer.contact}
                 onChange={(e) => setCustomer({...customer, contact: e.target.value})}
-                required
+                
               />
             </div>
             <div>
@@ -484,7 +493,7 @@ function NewSale() {
             className={`px-6 py-2 rounded-lg text-white ${
               cart.length === 0 || (paymentType === 'take_now' && !dueDate) 
                 ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-green-600 hover:bg-green-700'
+                : 'bg-[#00005A] hover:bg-[#00007A]'
             } transition-colors`}
           >
             {paymentType === 'paid' ? 'Confirm Sale' : 'Record Takeaway'}

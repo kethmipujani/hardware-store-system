@@ -88,7 +88,10 @@ function Dashboard() {
         
         <div className="mt-auto pt-24 border-t border-[#00007A] w-full">
           <button 
-            onClick={() => navigate("/login")}
+            onClick={() => {
+              localStorage.clear();
+              navigate("/");
+            }}
             className="flex items-center p-3 mt-8 text-red-300 hover:bg-red-900 rounded-lg transition-colors w-full"
           >
             <FiLogOut className="mr-3" />
