@@ -70,8 +70,8 @@ function Dashboard() {
           </button>
           
           <button 
-            onClick={() => setActiveTab("suppliers")}
-            className={`flex items-center w-full p-3 mb-2 rounded-lg ${activeTab === "suppliers" ? "bg-[#8B000B] text-white" : "hover:bg-[#00007A]"}`}
+            onClick={() => navigate("/suppliers")}
+            className={`flex items-center w-full p-3 mb-2 rounded-lg ${activeTab === "suppliers" ? "bg-[#8B000B]" : ""} hover:bg-[#00007A]`}
           >
             <FiTruck className="mr-3" />
             Suppliers

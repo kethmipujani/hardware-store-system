@@ -1,7 +1,8 @@
 package com.hardware.shop.backend.controller;
 
 import com.hardware.shop.backend.model.Supplier;
-import com.hardware.shop.backend.repository.SupplierRepository;
+import com.hardware.shop.backend.service.SupplierService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -11,51 +12,35 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/suppliers")
-@CrossOrigin(origins = "http://localhost:3000") // allow frontend requests
+@CrossOrigin(origins = "http://localhost:3000")
 public class SupplierController {
 
     @Autowired
-    private SupplierRepository supplierRepository;
+    private SupplierService supplierService;
 
-    // Get all suppliers
     @GetMapping
     public List<Supplier> getAllSuppliers() {
-        return supplierRepository.findAll();
+        return supplierService.getAllSuppliers();
     }
 
-    // Get supplier by ID
     @GetMapping("/{id}")
     public Supplier getSupplierById(@PathVariable Long id) {
-        return supplierRepository.findById(id)
+        return supplierService.getSupplierById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Supplier not found"));
     }
 
-    // Create supplier
     @PostMapping
     public Supplier createSupplier(@RequestBody Supplier supplier) {
-        return supplierRepository.save(supplier);
+        return supplierService.addSupplier(supplier);
     }
 
-    // Update supplier
     @PutMapping("/{id}")
     public Supplier updateSupplier(@PathVariable Long id, @RequestBody Supplier supplier) {
-        Supplier existing = supplierRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Supplier not found"));
-
-        existing.setName(supplier.getName());
-        existing.setContactInfo(supplier.getContactInfo());
-        existing.setCompanyName(supplier.getCompanyName());
-        existing.setEmail(supplier.getEmail());
-
-        return supplierRepository.save(existing);
+        return supplierService.updateSupplier(id, supplier);
     }
 
-    // Delete supplier
     @DeleteMapping("/{id}")
     public void deleteSupplier(@PathVariable Long id) {
-        if (!supplierRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Supplier not found");
-        }
-        supplierRepository.deleteById(id);
+        supplierService.deleteSupplier(id);
     }
 }
