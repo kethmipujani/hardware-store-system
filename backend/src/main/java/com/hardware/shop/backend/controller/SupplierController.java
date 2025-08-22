@@ -1,6 +1,7 @@
 package com.hardware.shop.backend.controller;
 
 import com.hardware.shop.backend.model.Supplier;
+import com.hardware.shop.backend.dto.SupplierDTO;
 import com.hardware.shop.backend.service.SupplierService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,15 +12,14 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/suppliers")
-@CrossOrigin(origins = "http://localhost:3000")
+@RequestMapping("/api/suppliers")
 public class SupplierController {
 
     @Autowired
     private SupplierService supplierService;
 
     @GetMapping
-    public List<Supplier> getAllSuppliers() {
+    public List<SupplierDTO> getAllSuppliers() {
         return supplierService.getAllSuppliers();
     }
 

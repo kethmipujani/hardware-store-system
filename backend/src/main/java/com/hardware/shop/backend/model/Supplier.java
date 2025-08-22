@@ -1,5 +1,6 @@
 package com.hardware.shop.backend.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,7 +17,13 @@ public class Supplier {
     private String name;
     private String contactInfo;
     private String companyName;
+
+     @Column(nullable = true)
     private String email;
+    
+    @Column(nullable = true)
+    private String address;   
+    
 
         // One supplier has many products
         @OneToMany(mappedBy = "supplier")
@@ -26,12 +33,13 @@ public class Supplier {
     public Supplier() {}
 
     // All-args constructor
-    public Supplier(Long id, String name, String contactInfo, String companyName, String email) {
+    public Supplier(Long id, String name, String contactInfo, String companyName, String email, String address) {
         this.id = id;
         this.name = name;
         this.contactInfo = contactInfo;
         this.companyName = companyName;
-        this.email = email;
+        this.email = email != null && !email.isBlank() ? email : null;
+        this.address = address;
     }
 
         public java.util.List<Product> getProducts() {
@@ -72,5 +80,11 @@ public class Supplier {
     }
     public void setEmail(String email) {
         this.email = email;
+    }
+     public String getAddress() {
+        return address;
+    }
+    public void setAddress(String address) {
+        this.address = address;
     }
 }
