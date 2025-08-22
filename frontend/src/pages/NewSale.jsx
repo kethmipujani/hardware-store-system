@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiSearch, FiTrash2, FiPlus, FiMinus, FiChevronDown, FiArrowLeft } from "react-icons/fi";
+import { FiSearch, FiTrash2, FiPlus, FiMinus, FiChevronDown, FiArrowLeft, FiEdit, FiX, FiSave, FiPercent } from "react-icons/fi";
 
 function NewSale() {
   const navigate = useNavigate();
@@ -24,12 +24,8 @@ function NewSale() {
   const [amountPaid, setAmountPaid] = useState(0);
   const [dueDate, setDueDate] = useState("");
 
-  // Discount System
-  const [discount, setDiscount] = useState({
-    type: "none", // "none", "percentage", "fixed"
-    value: 0,
-    reason: ""
-  });
+  // Item Discount Editing
+  const [editingDiscount, setEditingDiscount] = useState(null);
 
   // Sample Products Data
   const products = [
@@ -40,23 +36,42 @@ function NewSale() {
     { id: 5, name: "Hammer", price: 1000, stock: 30, code: "HMR-005" }
   ];
 
-  // Filter products based on search
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter products(case-insensitive)
+  const filteredProducts = products.filter(product => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      product.name.toLowerCase().startsWith(term) ||
+      product.code.toLowerCase().startsWith(term)
+    );
+  });
 
   // Calculate Totals
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  let discountAmount = 0;
-  if (discount.type === "percentage") {
-    discountAmount = subtotal * (discount.value / 100);
-  } else if (discount.type === "fixed") {
-    discountAmount = discount.value;
-  }
+  const calculateItemTotal = (item) => {
+    const itemSubtotal = item.price * item.quantity;
+    let discountAmount = 0;
+    
+    if (item.discount && item.discount.type !== "none") {
+      if (item.discount.type === "percentage") {
+        discountAmount = itemSubtotal * (item.discount.value / 100);
+      } else if (item.discount.type === "fixed") {
+        discountAmount = item.discount.value;
+      }
+    }
+    
+    return {
+      subtotal: itemSubtotal,
+      discount: discountAmount,
+      total: itemSubtotal - discountAmount
+    };
+  };
 
-  const totalAmount = subtotal - discountAmount;
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const totalDiscount = cart.reduce((sum, item) => {
+    const itemTotal = calculateItemTotal(item);
+    return sum + itemTotal.discount;
+  }, 0);
+  const totalAmount = subtotal - totalDiscount;
   const balance = amountPaid - totalAmount;
 
   // Cart Functions
@@ -73,7 +88,11 @@ function NewSale() {
       setCart([...cart, { 
         ...product, 
         quantity,
-        discount: 0 // Can add per-item discount later
+        discount: {
+          type: "none",
+          value: 0,
+          reason: ""
+        }
       }]);
     }
     
@@ -92,26 +111,55 @@ function NewSale() {
     ));
   };
 
+  // Discount Functions
+  const startEditDiscount = (item) => {
+    setEditingDiscount({
+      id: item.id,
+      discount: { ...item.discount }
+    });
+  };
+
+  const saveDiscount = () => {
+    setCart(cart.map(item =>
+      item.id === editingDiscount.id 
+        ? { ...item, discount: editingDiscount.discount } 
+        : item
+    ));
+    setEditingDiscount(null);
+  };
+
+  const cancelEditDiscount = () => {
+    setEditingDiscount(null);
+  };
+
+  const updateDiscountValue = (field, value) => {
+    setEditingDiscount({
+      ...editingDiscount,
+      discount: {
+        ...editingDiscount.discount,
+        [field]: value
+      }
+    });
+  };
+
   // Handle Form Submission
   const handleSubmit = (e) => {
     e.preventDefault();
     
     const saleData = {
       customer,
-      items: cart,
+      items: cart.map(item => ({
+        ...item,
+        ...calculateItemTotal(item)
+      })),
       payment: {
         type: paymentType,
         method: paymentType === 'paid' ? paymentMethod : null,
         amountPaid: paymentType === 'paid' ? amountPaid : 0,
         dueDate: paymentType === 'take_now' ? dueDate : null
       },
-      discount: {
-        type: discount.type,
-        value: discount.value,
-        amount: discountAmount,
-        reason: discount.reason
-      },
       subtotal,
+      totalDiscount,
       totalAmount,
       date: new Date().toISOString()
     };
@@ -124,7 +172,6 @@ function NewSale() {
     // Reset form after submission
     setCart([]);
     setAmountPaid(0);
-    setDiscount({ type: "none", value: 0, reason: "" });
   };
 
   return (
@@ -205,8 +252,11 @@ function NewSale() {
                 type="number"
                 min="1"
                 className="border border-gray-300 p-2 rounded-lg w-16 text-center"
-                value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                value={quantity === 0 ? (quantity === '' ? '' : '0') : quantity}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setQuantity(val === '' ? '' : Math.max(1, parseInt(val)));
+                }}
               />
               <button 
                 onClick={() => setQuantity(quantity + 1)}
@@ -260,50 +310,157 @@ function NewSale() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subtotal</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {cart.map(item => (
-                    <tr key={item.id}>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">{item.name}</div>
-                        <div className="text-sm text-gray-500">{item.code}</div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        LKR {item.price.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="bg-gray-200 p-1 rounded hover:bg-gray-300"
+                  {cart.map(item => {
+                    const itemTotal = calculateItemTotal(item);
+                    return (
+                      <tr key={item.id}>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="font-medium text-gray-900">{item.name}</div>
+                          <div className="text-sm text-gray-500">{item.code}</div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          LKR {item.price.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              className="bg-gray-200 p-1 rounded hover:bg-gray-300"
+                            >
+                              <FiMinus size={12} />
+                            </button>
+                            <span className="w-8 text-center">{item.quantity}</span>
+                            <button 
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              className="bg-gray-200 p-1 rounded hover:bg-gray-300"
+                            >
+                              <FiPlus size={12} />
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {editingDiscount && editingDiscount.id === item.id ? (
+                            <div className="flex flex-col gap-2 p-2 bg-gray-50 rounded border">
+                              <div className="flex items-center gap-2">
+                                <select 
+                                  className="border border-gray-300 p-1 rounded text-sm flex-1"
+                                  value={editingDiscount.discount.type}
+                                  onChange={(e) => updateDiscountValue("type", e.target.value)}
+                                >
+                                  <option value="none">No Discount</option>
+                                  <option value="percentage">Percentage</option>
+                                  <option value="fixed">Fixed Amount</option>
+                                </select>
+                              </div>
+                              
+                              {editingDiscount.discount.type !== "none" && (
+                                <>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max={editingDiscount.discount.type === "percentage" ? 100 : itemTotal.subtotal}
+                                      className="border border-gray-300 p-1 rounded w-full text-right"
+                                      value={editingDiscount.discount.value === 0 ? (editingDiscount.discount.value === '' ? '' : '0') : editingDiscount.discount.value}
+                                      onChange={(e) => {
+                                        const max = editingDiscount.discount.type === "percentage" ? 100 : itemTotal.subtotal;
+                                        const val = e.target.value;
+                                        updateDiscountValue("value", val === '' ? '' : Math.min(parseFloat(val), max));
+                                      }}
+                                    />
+                                    <span className="text-sm whitespace-nowrap">
+                                      {editingDiscount.discount.type === "percentage" ? "%" : "LKR"}
+                                    </span>
+                                  </div>
+                                  
+                                  <input
+                                    type="text"
+                                    placeholder="Discount reason"
+                                    className="border border-gray-300 p-1 rounded text-sm"
+                                    value={editingDiscount.discount.reason}
+                                    onChange={(e) => updateDiscountValue("reason", e.target.value)}
+                                  />
+                                  
+                                  <div className="flex justify-between text-xs">
+                                    <span>Discount:</span>
+                                    <span className="text-red-600">
+                                      - LKR {editingDiscount.discount.type === "percentage" 
+                                        ? (itemTotal.subtotal * (editingDiscount.discount.value / 100)).toLocaleString()
+                                        : editingDiscount.discount.value.toLocaleString()}
+                                    </span>
+                                  </div>
+                                </>
+                              )}
+                              
+                              <div className="flex justify-between gap-2 mt-1">
+                                <button
+                                  onClick={cancelEditDiscount}
+                                  className="text-xs bg-gray-200 px-2 py-1 rounded hover:bg-gray-300"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={saveDiscount}
+                                  className="text-xs bg-[#00005A] text-white px-2 py-1 rounded hover:bg-[#00007A]"
+                                >
+                                  Apply
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col">
+                              {item.discount.type !== "none" ? (
+                                <>
+                                  <span className="text-sm text-red-600">
+                                    {item.discount.type === "percentage" 
+                                      ? `${item.discount.value}% off` 
+                                      : `LKR ${item.discount.value} off`}
+                                  </span>
+                                  {item.discount.reason && (
+                                    <span className="text-xs text-gray-500">{item.discount.reason}</span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-sm text-gray-500">No discount</span>
+                              )}
+                              <button
+                                onClick={() => startEditDiscount(item)}
+                                className="text-xs text-blue-600 mt-1 flex items-center gap-1"
+                              >
+                                <FiEdit size={10} /> {item.discount.type !== "none" ? "Edit" : "Add"}
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm">
+                          <div className="flex flex-col">
+                            {itemTotal.discount > 0 && (
+                              <div className="text-red-600 line-through">
+                                LKR {itemTotal.subtotal.toLocaleString()}
+                              </div>
+                            )}
+                            <div className={itemTotal.discount > 0 ? "font-medium" : ""}>
+                              LKR {itemTotal.total.toLocaleString()}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="text-red-600 hover:text-red-800 flex items-center gap-1 text-sm"
                           >
-                            <FiMinus size={12} />
+                            <FiTrash2 size={14} /> Remove
                           </button>
-                          <span className="w-8 text-center">{item.quantity}</span>
-                          <button 
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                            className="bg-gray-200 p-1 rounded hover:bg-gray-300"
-                          >
-                            <FiPlus size={12} />
-                          </button>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        LKR {(item.price * item.quantity).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="text-red-600 hover:text-red-800 flex items-center gap-1 text-sm"
-                        >
-                          <FiTrash2 size={14} /> Remove
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -325,57 +482,17 @@ function NewSale() {
                 <span className="font-medium">LKR {subtotal.toLocaleString()}</span>
               </div>
               
-              {/* Discount Section */}
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Discount:</span>
-                <div className="flex items-center gap-2">
-                  <select 
-                    className="border border-gray-300 p-1 rounded text-sm"
-                    value={discount.type}
-                    onChange={(e) => setDiscount({...discount, type: e.target.value, value: 0})}
-                  >
-                    <option value="none">No Discount</option>
-                    <option value="percentage">Percentage</option>
-                    <option value="fixed">Fixed Amount</option>
-                  </select>
-                  
-                  {discount.type !== "none" && (
-                    <div className="flex items-center">
-                      <input
-                        type="number"
-                        min="0"
-                        max={discount.type === "percentage" ? 100 : subtotal}
-                        className="border border-gray-300 p-1 rounded w-16 text-right"
-                        value={discount.value}
-                        onChange={(e) => {
-                          const max = discount.type === "percentage" ? 100 : subtotal;
-                          const val = Math.min(parseFloat(e.target.value) || 0, max);
-                          setDiscount({...discount, value: val});
-                        }}
-                      />
-                      <span className="ml-1 text-sm">
-                        {discount.type === "percentage" ? "%" : "LKR"}
-                      </span>
-                    </div>
-                  )}
-                </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total Discount:</span>
+                <span className="text-red-600">- LKR {totalDiscount.toLocaleString()}</span>
               </div>
               
-              {discount.type !== "none" && (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Discount Amount:</span>
-                    <span className="text-red-600">- LKR {discountAmount.toLocaleString()}</span>
-                  </div>
-                  
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="text-gray-700 font-medium">Total:</span>
-                    <span className="text-lg font-bold text-[#00005A]">
-                      LKR {totalAmount.toLocaleString()}
-                    </span>
-                  </div>
-                </>
-              )}
+              <div className="flex justify-between border-t pt-2">
+                <span className="text-gray-700 font-medium">Total Amount:</span>
+                <span className="text-lg font-bold text-[#00005A]">
+                  LKR {totalAmount.toLocaleString()}
+                </span>
+              </div>
             </div>
 
             {/* Right Column - Payment */}
@@ -438,8 +555,11 @@ function NewSale() {
                     min="0"
                     step="any"
                     className="border border-gray-300 p-2 rounded-lg w-full focus:ring-2 focus:ring-[#00005A] focus:border-transparent"
-                    value={amountPaid}
-                    onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
+                    value={amountPaid === 0 ? (amountPaid === '' ? '' : '0') : amountPaid}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setAmountPaid(val === '' ? '' : parseFloat(val));
+                    }}
                     required
                   />
                 </div>
@@ -453,20 +573,6 @@ function NewSale() {
                   ) : (
                     <p>Amount Due: LKR {Math.abs(balance).toLocaleString()}</p>
                   )}
-                </div>
-              )}
-
-              {/* Discount Reason (optional) */}
-              {discount.type !== "none" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Discount Reason (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="E.g., Wholesale customer, special offer"
-                    className="border border-gray-300 p-2 rounded-lg w-full focus:ring-2 focus:ring-[#00005A] focus:border-transparent"
-                    value={discount.reason}
-                    onChange={(e) => setDiscount({...discount, reason: e.target.value})}
-                  />
                 </div>
               )}
             </div>
