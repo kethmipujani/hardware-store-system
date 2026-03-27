@@ -1,0 +1,18 @@
+# Spring Boot / Maven / Gradle
+target/
+build/
+*.jar
+*.war
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets
+application.properties
+.env
